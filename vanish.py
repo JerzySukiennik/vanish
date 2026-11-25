@@ -215,14 +215,21 @@ class AppDelegate(NSObject):
         self.timer = NSTimer.timerWithTimeInterval_target_selector_userInfo_repeats_(1.0 / 15.0, self, b"tick:", None, True)
         NSRunLoop.currentRunLoop().addTimer_forMode_(self.timer, NSRunLoopCommonModes)
         status = cammod.authorization()
+        log(f"uprawnienie do kamery: {status}")
         if status == 3:
             self.start_worker()
         elif status == 0:
-            cammod.request_access(lambda granted: self.start_worker() if granted else None)
+            cammod.request_access(self.access_result)
         if self.cfg.get("first_run", True):
             self.cfg["first_run"] = False
             save_config(self.cfg)
             self.showPreview_(None)
+
+    @objc.python_method
+    def access_result(self, granted):
+        log(f"odpowiedź o kamerę: {bool(granted)}")
+        if granted:
+            self.start_worker()
 
     @objc.python_method
     def make_trigger(self, key):
