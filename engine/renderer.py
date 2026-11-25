@@ -157,10 +157,13 @@ class Renderer:
     def fill_plate_holes(self):
         data = self.plate.read(level=2)
         rgba = np.frombuffer(data, np.float16).reshape(FH, FW, 4).astype(np.float32)
-        seen = rgba[..., 3] > 0.5
-        if seen.all() or not seen.any():
+        a = rgba[..., 3]
+        if a.max() < 0.05:
+            self.fill.write(np.full((FH, FW, 3), 0.5, np.float16))
             return
-        filled = pull_push(rgba[..., :3], seen.astype(np.float32))
+        known = rgba[..., :3] / np.maximum(a, 1e-3)[..., None]
+        valid = np.clip((a - 0.2) / 0.4, 0.0, 1.0)
+        filled = pull_push(np.minimum(known, 4.0), valid)
         self.fill.write(np.ascontiguousarray(filled.astype(np.float16)))
 
     def draw_gone(self):
@@ -173,19 +176,24 @@ class Renderer:
 
 
 def pull_push(img, valid):
+    total = float(valid.sum())
+    mean = (img * valid[..., None]).reshape(-1, 3).sum(0) / max(total, 1e-4)
     levels = []
-    cur_img, cur_w = img * valid[..., None], valid.copy()
-    while min(cur_w.shape) > 6:
+    cur_img, cur_w = img * valid[..., None], valid.astype(np.float32)
+    while max(cur_w.shape) > 1:
         levels.append((cur_img, cur_w))
         h, w = cur_w.shape
         size = (max(w // 2, 1), max(h // 2, 1))
         cur_img = cv2.resize(cur_img, size, interpolation=cv2.INTER_AREA)
         cur_w = cv2.resize(cur_w, size, interpolation=cv2.INTER_AREA)
-    coarse = cur_img / np.maximum(cur_w[..., None], 1e-4)
+        if cur_w.ndim == 1 or cur_w.shape != (size[1], size[0]):
+            cur_w = cur_w.reshape(size[1], size[0])
+            cur_img = cur_img.reshape(size[1], size[0], 3)
+    coarse = np.where(cur_w[..., None] > 1e-4, cur_img / np.maximum(cur_w[..., None], 1e-4), mean)
     for lvl_img, lvl_w in reversed(levels):
         h, w = lvl_w.shape
-        up = cv2.resize(coarse, (w, h), interpolation=cv2.INTER_LINEAR)
-        up = cv2.GaussianBlur(up, (0, 0), 1.0)
+        up = cv2.resize(coarse, (w, h), interpolation=cv2.INTER_LINEAR).reshape(h, w, 3)
+        up = cv2.GaussianBlur(up, (0, 0), 1.0).reshape(h, w, 3)
         known = lvl_img / np.maximum(lvl_w[..., None], 1e-4)
         k = np.clip(lvl_w * 1.5, 0, 1)[..., None]
         coarse = known * k + up * (1 - k)

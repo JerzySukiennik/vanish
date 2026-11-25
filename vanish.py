@@ -163,6 +163,8 @@ class Worker(threading.Thread):
         if self.vcam is not None:
             if self.obs_phase != "ready":
                 log("kamera dla Teams gotowa")
+                if obs_setup.ours_running():
+                    obs_setup.quit_obs()
             self.obs_phase = "ready"
             return
         err = (self.vcam_error or "").lower()
@@ -203,13 +205,22 @@ class Worker(threading.Thread):
             frames = 0
             t_fps = time.monotonic()
             t_save = t_fps
+            last_frame = time.monotonic()
             while self.running:
                 frame, new_seq = self.cam.read(seq, 1.0)
                 now = time.monotonic()
                 self.ensure_vcam(now)
                 if frame is None or new_seq == seq:
+                    if now - last_frame > 3.0:
+                        log("kamera nie wysyła klatek od 3 s, restartuję ją")
+                        self.cam.stop()
+                        self.cam = cammod.Camera(self.cfg.get("camera"))
+                        self.cam.start()
+                        seq = 0
+                        last_frame = now
                     continue
                 seq = new_seq
+                last_frame = now
                 out = self.pipe.step(frame)
                 self.latest = out
                 if self.vcam is not None:

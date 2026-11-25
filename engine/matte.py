@@ -13,7 +13,7 @@ class Matte:
         self.prev = None
         self.hist = deque(maxlen=3)
         self.k_tight = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        self.k_safe = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+        self.k_safe = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 13))
 
     def reset(self):
         self.prev = None

@@ -45,6 +45,7 @@ class Pipeline:
         self.seen_lr = np.zeros((45, 80), bool)
         self.gain = np.ones(3, np.float32)
         self.validate_in = 0
+        self.fill_t = -10.0
 
     def command(self, kind, key=None, **opts):
         self.cmds.put((kind, key, opts))
@@ -83,6 +84,9 @@ class Pipeline:
         self.r.activate()
         if need_seg:
             self._track_gain(small, now - self.plate_t > 0.2)
+        if self.state == PRESENT and now - self.fill_t > 3.0:
+            self.r.fill_plate_holes()
+            self.fill_t = now
         if need_seg and now - self.plate_t > 0.2:
             self.r.upload_live(rgb)
             self.r.upload_masks(*self.masks)

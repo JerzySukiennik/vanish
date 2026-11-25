@@ -79,6 +79,14 @@ def launch_obs():
     )
 
 
+def ours_running():
+    try:
+        out = subprocess.run(["ps", "-axo", "args"], capture_output=True, text=True, timeout=3).stdout
+    except Exception:
+        return False
+    return any("OBS.app/Contents/MacOS/OBS" in line and "--startvirtualcam" in line and "--minimize-to-tray" in line for line in out.splitlines())
+
+
 def quit_obs():
     for app in NSRunningApplication.runningApplicationsWithBundleIdentifier_(OBS_ID):
         app.terminate()

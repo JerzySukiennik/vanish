@@ -1,6 +1,7 @@
 """Webcam capture through AVFoundation; skips virtual and printer cameras so OBS never loops back into itself."""
 
 import threading
+import time
 
 import AVFoundation as AVF
 import CoreMedia
@@ -9,7 +10,7 @@ import dispatch
 import numpy as np
 import objc
 import Quartz
-from Foundation import NSObject
+from Foundation import NSNotificationCenter, NSObject
 
 EXCLUDE = ("obs", "virtual", "printer", "laserjet", "officejet", "scanner")
 
@@ -74,6 +75,7 @@ class Camera:
         if inp is None:
             raise RuntimeError(f"Kamera niedostępna: {err}")
         session.addInput_(inp)
+        self.lock_frame_rate(30, 24)
         out = AVF.AVCaptureVideoDataOutput.alloc().init()
         out.setVideoSettings_({Quartz.kCVPixelBufferPixelFormatTypeKey: Quartz.kCVPixelFormatType_32BGRA})
         out.setAlwaysDiscardsLateVideoFrames_(True)
@@ -81,9 +83,35 @@ class Camera:
         self.delegate = _Delegate.alloc().initWithCamera_(self)
         out.setSampleBufferDelegate_queue_(self.delegate, self.queue)
         session.addOutput_(out)
+        center = NSNotificationCenter.defaultCenter()
+        self.observers = []
+        for name in ("AVCaptureSessionRuntimeErrorNotification", "AVCaptureSessionWasInterruptedNotification", "AVCaptureSessionInterruptionEndedNotification"):
+            obs = center.addObserverForName_object_queue_usingBlock_(name, session, None, self._on_note)
+            self.observers.append(obs)
         session.startRunning()
         self.session = session
         self.output = out
+
+    def lock_frame_rate(self, fast, slow):
+        dev = self.device
+        try:
+            ranges = dev.activeFormat().videoSupportedFrameRateRanges()
+            if not any(r.minFrameRate() <= slow and r.maxFrameRate() >= fast for r in ranges):
+                return False
+            ok, _ = dev.lockForConfiguration_(None)
+            if not ok:
+                return False
+            dev.setActiveVideoMinFrameDuration_(CoreMedia.CMTimeMake(1, fast))
+            dev.setActiveVideoMaxFrameDuration_(CoreMedia.CMTimeMake(1, slow))
+            dev.unlockForConfiguration()
+            return True
+        except Exception as e:
+            print(time.strftime("%H:%M:%S"), "kamera: nie ustawię kl/s:", e, flush=True)
+            return False
+
+    def _on_note(self, note):
+        info = note.userInfo()
+        print(time.strftime("%H:%M:%S"), "kamera:", str(note.name()), dict(info) if info else "", flush=True)
 
     def _on_sample(self, sample):
         pb = CoreMedia.CMSampleBufferGetImageBuffer(sample)
@@ -111,4 +139,8 @@ class Camera:
 
     def stop(self):
         if self.session is not None:
+            center = NSNotificationCenter.defaultCenter()
+            for obs in getattr(self, "observers", []):
+                center.removeObserver_(obs)
             self.session.stopRunning()
+            self.session = None

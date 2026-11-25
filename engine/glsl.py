@@ -28,7 +28,8 @@ bool inside(vec2 uv) { return uv.x >= 0.0 && uv.y >= 0.0 && uv.x <= 1.0 && uv.y 
 vec3 plateLod(vec2 uv, float lod) {
     vec4 p = textureLod(u_plate, uv, lod);
     vec3 f = textureLod(u_plateFill, uv, 0.0).rgb;
-    return min(mix(f, p.rgb, smoothstep(0.35, 0.65, p.a)) * u_gain, vec3(1.0));
+    vec3 c = min(p.rgb / max(p.a, 0.001), vec3(4.0));
+    return min(mix(f, c, smoothstep(0.2, 0.6, p.a)) * u_gain, vec3(1.0));
 }
 vec3 plateAt(vec2 uv) { return plateLod(uv, 0.0); }
 vec3 liveAt(vec2 uv) { return textureLod(u_live, uv, 0.0).rgb; }
