@@ -2,27 +2,27 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key>
-    <string>Vanish</string>
-    <key>CFBundleDisplayName</key>
-    <string>Vanish</string>
-    <key>CFBundleIdentifier</key>
-    <string>fun.gzowo.vanish</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-    <key>CFBundleExecutable</key>
-    <string>Vanish</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>LSUIElement</key>
-    <true/>
-    <key>LSMinimumSystemVersion</key>
-    <string>13.0</string>
-    <key>NSCameraUsageDescription</key>
-    <string>Vanish wycina Cię z obrazu kamery i wysyła efekt znikania do Teams.</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
+	<key>CFBundleDisplayName</key>
+	<string>Vanish</string>
+	<key>CFBundleExecutable</key>
+	<string>Vanish</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>fun.gzowo.vanish</string>
+	<key>CFBundleName</key>
+	<string>Vanish</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.1</string>
+	<key>CFBundleVersion</key>
+	<string>2</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Vanish wycina Cię z obrazu kamery i wysyła efekt znikania do Teams.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 </dict>
 </plist>

@@ -1,6 +1,6 @@
 # Vanish
 
-A macOS menu-bar app that cuts you out of your webcam feed and lets you disappear from a Teams (or Zoom, Meet) call with a visual effect, leaving a live view of your empty desk. The output goes to the OBS virtual camera, so any meeting app can use it.
+A macOS app that cuts you out of your webcam feed and lets you disappear from a Teams (or Zoom, Meet) call with a visual effect, leaving a live view of your empty desk. The output goes to the OBS virtual camera, so any meeting app can use it.
 
 ## Effects
 
@@ -29,10 +29,11 @@ While you are gone, any gesture or hotkey brings you back by playing that effect
 
 ## Setup
 
-1. Install OBS (`brew install --cask obs`), open it once, click **Start Virtual Camera**, approve the camera extension in System Settings, then stop it and quit OBS.
+1. Install OBS once (`brew install --cask obs`). You never have to open it yourself.
 2. Python 3.12 venv in `Niepotrzebne/venv` with `mediapipe==0.10.21 moderngl==5.12.0 pyvirtualcam==0.15.0` and `pyobjc-*==11.1` (Cocoa, AVFoundation, CoreMedia, Quartz, libdispatch). pyobjc 13 breaks CoreMedia on this macOS.
-3. Open `Vanish.app`, allow camera access, step out of frame for 3 seconds so it learns your empty background.
-4. In Teams: Settings, Devices, Camera, **OBS Virtual Camera**.
+3. Open `Vanish.app` (Dock app with a preview window and a menu-bar icon) and allow camera access.
+4. On the first run Vanish launches OBS in the background with `--startvirtualcam` (first-run dialogs are pre-dismissed in `global.ini`/`user.ini`), waits until macOS has approved the OBS camera extension, then quits OBS and streams to the virtual camera itself. The only manual steps are the macOS prompts: Gatekeeper's first-open confirmation for OBS and the one-time camera-extension approval.
+5. In Teams: Settings, Devices, Camera, **OBS Virtual Camera**.
 
 ## Testing without a camera
 
@@ -40,7 +41,8 @@ While you are gone, any gesture or hotkey brings you back by playing that effect
 
 ## Files
 
-- `vanish.py`: menu-bar app, worker thread, preview window.
+- `vanish.py`: app window with preview and effect cards, menu-bar icon, worker thread, automatic OBS virtual-camera activation.
+- `engine/obs_setup.py`: launches OBS headless once to install the camera extension.
 - `engine/pipeline.py`: state machine (present, vanish, gone, return, shrink).
 - `engine/effects.py`: the nine effects.
 - `engine/matte.py`, `engine/gestures.py`, `engine/camera.py`, `engine/hotkeys.py`, `engine/renderer.py`, `engine/glsl.py`, `engine/glcontext_mac.py`.
